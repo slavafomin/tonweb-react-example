@@ -73,9 +73,14 @@ export default function App() {
   useEffect(() => {
     (async () => {
       setBalance(await getBalance(address));
-      setNewAddress(await createNewWallet());
     })();
   }, [address]);
+
+  useEffect(() => {
+    (async () => {
+      setNewAddress(await createNewWallet());
+    })();
+  }, []);
 
   return (
     <div className="App">
