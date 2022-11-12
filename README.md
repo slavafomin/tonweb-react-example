@@ -1,46 +1,132 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# TonWeb React Example
 
-## Available Scripts
+This example demonstrates how to use [TonWeb](https://github.com/toncenter/tonweb) with React ([create-react-app](https://create-react-app.dev/)).
 
-In the project directory, you can run:
+## Steps
 
-### `npm start`
+1. Create new React app using CRA:
+   
+```shell
+npx create-react-app tonweb-react-example --template typescript
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+2. Install TonWeb packages:
+   
+```shell
+npm i -S tonweb tonweb-mnemonic
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+3. Install [Buffer polyfill](https://github.com/feross/buffer):
+   
+```shell
+npm i -S buffer
+```
 
-### `npm test`
+4. Create `polyfills.ts` file to load the polyfill:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```ts
+import { Buffer } from 'buffer'
+globalThis.Buffer = Buffer
+```
 
-### `npm run build`
+5. Import the `polyfills.ts` from the top of your `index.ts`
+   (before all other imports):
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```ts
+import './polyfills';
+ 
+// all other imports…
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+6. Create the TonWeb instance:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```ts
+const httpApiUrl = 'https://toncenter.com/api/v2/jsonRPC';
 
-### `npm run eject`
+const provider = new TonWeb.HttpProvider(httpApiUrl, {
+    /**
+     * Get your own API key at: {@link https://t.me/tonapibot}
+     */
+    apiKey: '',
+});
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+const tonweb = new TonWeb(provider);
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+7. Use it in your components:
+   
+```tsx
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+const address = 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N';
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+export default function App() {
 
-## Learn More
+  const [balance, setBalance] = useState<string | undefined>(
+    undefined
+  );
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+  const [newAddress, setNewAddress] = useState<string | undefined>(
+    undefined
+  );
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+  useEffect(() => {
+    (async () => {
+      setBalance(await getBalance(address));
+      setNewAddress(await createNewWallet());
+    })();
+  }, [address]);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Address:<br/>
+          <strong>{address}</strong>
+        </p>
+        { balance && (
+          <p>
+            Balance:<br/>
+            <strong>{balance} TON</strong>
+          </p>
+        ) }
+        { newAddress && (
+          <p>
+            New Wallet Address:<br/>
+            <strong>{newAddress}</strong>
+          </p>
+        ) }
+      </header>
+    </div>
+  );
+
+}
+
+async function createNewWallet(): Promise<string> {
+
+  const words = await mnemonic.generateMnemonic();
+
+  const keyPair = await mnemonic.mnemonicToKeyPair(words);
+
+  const wallet = new TonWeb.Wallets.all.v4R2(provider, {
+    publicKey: keyPair.publicKey,
+  });
+
+  const address = await wallet.getAddress();
+
+  return address.toString(true, true, true);
+
+}
+
+async function getBalance(address: string): Promise<string> {
+
+  const info = await provider.getWalletInfo(address);
+
+  return tonweb.utils.fromNano(info.balance);
+
+}
+
+```
+
+Look at [this commit](https://github.com/slavafomin/tonweb-react-example/commit/0d0dfa5f5fe440ec73e6f3d66542278cdd490dce) for example.
