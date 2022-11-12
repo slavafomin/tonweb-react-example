@@ -1,26 +1,53 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
+
 import logo from './logo.svg';
 import './App.css';
+import { createNewWallet, getBalance } from './tonweb';
 
-function App() {
+
+const address = 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N';
+
+
+export default function App() {
+
+  const [balance, setBalance] = useState<string | undefined>(
+    undefined
+  );
+
+  const [newAddress, setNewAddress] = useState<string | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    (async () => {
+      setBalance(await getBalance(address));
+      setNewAddress(await createNewWallet());
+    })();
+  }, [address]);
+
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Edit <code>src/App.tsx</code> and save to reload.
+          Address:<br/>
+          <strong>{address}</strong>
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        { balance && (
+          <p>
+            Balance:<br/>
+            <strong>{balance} TON</strong>
+          </p>
+        ) }
+        { newAddress && (
+          <p>
+            New Wallet Address:<br/>
+            <strong>{newAddress}</strong>
+          </p>
+        ) }
       </header>
     </div>
   );
-}
 
-export default App;
+}
